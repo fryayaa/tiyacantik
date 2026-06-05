@@ -13,20 +13,18 @@
         <form id="wishbox-form">
             <input type="text" id="name" placeholder="Nama Anda" required>
             <textarea id="message" placeholder="Tulis harapan atau ucapan Anda di sini..." required></textarea>
-            <button type="submit">Kirim Ucapan</button>
+            <button type="submit" id="submit-btn">Kirim Ucapan</button>
         </form>
 
         <hr>
 
         <h2>Ucapan Terbaru</h2>
         <div id="wishbox-entries">
-            <!-- Ucapan akan dimuat di sini -->
-            <p>Memuat ucapan...</p>
+            <p id="status-text">Memuat ucapan...</p>
         </div>
     </div>
 
-    <!-- Import Supabase client library -->
-    <script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
 </html>
