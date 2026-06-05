@@ -1,82 +1,100 @@
-const SUPABASE_URL = 'https:// fryayaa.github.io/tiyacantik/ .supabase.co'; // Pastikan HTTPS, bukan HTTP
-// Konfigurasi Supabase (Ganti dengan URL dan Anon Key milikmu sendiri)
-const SUPABASE_URL = 'https://XYZ_PROJECT_ID.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+// ==========================================
+// GANTI DENGAN DATA PROYEK SUPABASE KAMU
+// ==========================================
+const SUPABASE_URL = 'https://XYZ_PROJECT_ID.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; 
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inisialisasi Supabase Client
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Ambil elemen DOM
+// Ambil elemen dari HTML
 const form = document.getElementById('wishbox-form');
 const nameInput = document.getElementById('name');
 const messageInput = document.getElementById('message');
 const entriesContainer = document.getElementById('wishbox-entries');
 
-// Fungsi untuk mengambil data ucapan dari Supabase
+// Fungsi Ambil Data (Fetch)
 async function fetchWishes() {
-    const { data, error } = await supabase
-        .from('wishes') // Sesuaikan nama tabel di database kamu
-        .select('*')
-        .order('created_at', { ascending: false });
+    try {
+        // Mengambil data dari tabel bernama 'wishes'
+        const { data, error } = await supabase
+            .from('wishes')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('Gagal mengambil data:', error);
-        entriesContainer.innerHTML = '<p style="color: red;">Gagal memuat ucapan.</p>';
-        return;
+        // Jika Supabase menolak/error
+        if (error) {
+            console.error(error);
+            entriesContainer.innerHTML = `<p style="color: red; text-align: center; font-weight: bold;">
+                Gagal memuat dari database!<br>
+                Pesanan Error: ${error.message} (${error.code})
+            </p>`;
+            return;
+        }
+
+        // Jika koneksi sukses tapi database masih kosong
+        if (!data || data.length === 0) {
+            entriesContainer.innerHTML = '<p style="color: #888; text-align: center;">Belum ada ucapan. Yuk tulis ucapan pertama!</p>';
+            return;
+        }
+
+        // Jika data ada, render ke layar
+        entriesContainer.innerHTML = data.map(wish => `
+            <div class="entry-card">
+                <div class="entry-name">${escapeHTML(wish.name)}</div>
+                <div class="entry-message">${escapeHTML(wish.message)}</div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        // Jika ada masalah koneksi internet atau CDN gagal dimuat
+        console.error(err);
+        entriesContainer.innerHTML = `<p style="color: red; text-align: center;">Error Sistem: ${err.message}</p>`;
     }
-
-    // Jika data kosong
-    if (data.length === 0) {
-        entriesContainer.innerHTML = '<p style="color: #888; text-align: center;">Belum ada ucapan. Jadilah yang pertama!</p>';
-        return;
-    }
-
-    // Render data ke dalam HTML
-    entriesContainer.innerHTML = data.map(wish => `
-        <div class="entry-card">
-            <div class="entry-name">${escapeHTML(wish.name)}</div>
-            <div class="entry-message">${escapeHTML(wish.message)}</div>
-        </div>
-    `).join('');
 }
 
-// Fungsi untuk mengirim ucapan baru ke Supabase
+// Fungsi Kirim Data (Submit Form)
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name = nameInput.value.trim();
     const message = messageInput.value.trim();
+    const submitBtn = document.getElementById('submit-btn');
 
     if (!name || !message) return;
 
-    // Nonaktifkan tombol saat mengirim data
-    const submitBtn = form.querySelector('button');
+    // Kunci tombol agar tidak di-klik dua kali
     submitBtn.disabled = true;
     submitBtn.innerText = 'Mengirim...';
 
-    const { error } = await supabase
-        .from('wishes')
-        .insert([{ name, message }]);
+    try {
+        const { error } = await supabase
+            .from('wishes')
+            .insert([{ name, message }]);
 
-    // Kembalikan status tombol
-    submitBtn.disabled = false;
-    submitBtn.innerText = 'Kirim Ucapan';
-
-    if (error) {
-        alert('Gagal mengirim ucapan, coba lagi nanti.');
-        console.error(error);
-    } else {
-        // Reset form dan refresh daftar ucapan
-        form.reset();
-        fetchWishes();
+        if (error) {
+            alert(`Gagal mengirim: ${error.message}`);
+            console.error(error);
+        } else {
+            form.reset(); // Kosongkan form jika berhasil
+            await fetchWishes(); // Segera perbarui list ucapan
+        }
+    } catch (err) {
+        alert(`Error Sistem: ${err.message}`);
+    } finally {
+        // Kembalikan tombol ke kondisi semula
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Kirim Ucapan';
     }
 });
 
-// Fungsi keamanan sederhana untuk mencegah Cross-Site Scripting (XSS)
+// Sistem Pengaman dari XSS (Script Injection)
 function escapeHTML(str) {
+    if (!str) return '';
     return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
 
-// Jalankan fungsi fetch pertama kali saat halaman dimuat
+// Jalankan pencarian data pertama kali saat web dibuka
 fetchWishes();
