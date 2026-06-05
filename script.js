@@ -1,3 +1,4 @@
+const SUPABASE_URL = 'https:// fryayaa.github.io/tiyacantik/ .supabase.co'; // Pastikan HTTPS, bukan HTTP
 // Konfigurasi Supabase (Ganti dengan URL dan Anon Key milikmu sendiri)
 const SUPABASE_URL = 'https://XYZ_PROJECT_ID.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
