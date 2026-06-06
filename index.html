@@ -24,37 +24,26 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <script>
-        // DATA ASLI PROYEK SUPABASE LU (SUDAH FIX)
-        const SUPABASE_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.3R3uB-Cg9-yofcK2v_v-tB1o1k3B2_rYgE6O6R3uB-C'; 
-
-        // Hubungkan ke Supabase Client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // URL Endpoint Langsung ke REST API Supabase Lu
+        const REST_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co/rest/v1/wishes';
 
         const form = document.getElementById('wishbox-form');
         const nameInput = document.getElementById('name');
         const messageInput = document.getElementById('message');
         const entriesContainer = document.getElementById('wishbox-entries');
 
-        // Fungsi Mengambil Ucapan (Fetch)
+        // Fungsi Ambil Ucapan Pakai Fetch Native (Anti Gagal API Key)
         async function fetchWishes() {
             try {
-                const { data, error } = await supabase
-                    .from('wishes')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const response = await fetch(`${REST_URL}?select=*&order=created_at.desc`, {
+                    method: 'GET',
+                    headers: { 'prefer': 'return=representation' }
+                });
 
-                if (error) {
-                    console.error(error);
-                    entriesContainer.innerHTML = `<p style="color: red; text-align: center; font-weight: bold; padding: 10px;">
-                        Gagal memuat database!<br>
-                        Pesan Error: ${error.message}
-                    </p>`;
-                    return;
-                }
+                if (!response.ok) throw new Error('Koneksi ke Supabase bermasalah');
+
+                const data = await response.json();
 
                 if (!data || data.length === 0) {
                     entriesContainer.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Belum ada ucapan. Yuk tulis ucapan pertama!</p>';
@@ -62,54 +51,45 @@
                 }
 
                 entriesContainer.innerHTML = data.map(wish => `
-                    <div class="entry-card">
-                        <div class="entry-name">${escapeHTML(wish.name)}</div>
-                        <div class="entry-message">${escapeHTML(wish.message)}</div>
+                    <div class="entry-card" style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div class="entry-name" style="font-weight: bold; color: #333; margin-bottom: 5px;">${escapeHTML(wish.name)}</div>
+                        <div class="entry-message" style="color: #666; font-size: 14px;">${escapeHTML(wish.message)}</div>
                     </div>
                 `).join('');
 
             } catch (err) {
                 console.error(err);
-                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Error Sistem: ${err.message}</p>`;
+                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Gagal memuat ucapan terbaru.</p>`;
             }
         }
 
-        // Fungsi Mengirim Ucapan (Submit Form)
+        // Fungsi Kirim Ucapan
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const name = nameInput.value.trim();
             const message = messageInput.value.trim();
             const submitBtn = document.getElementById('submit-btn');
-
-            if (!name) {
-                alert("Nama Anda belum diisi!");
-                nameInput.focus();
-                return;
-            }
-            if (!message) {
-                alert("Harapan atau ucapan Anda belum diisi!");
-                messageInput.focus();
-                return;
-            }
 
             submitBtn.disabled = true;
             submitBtn.innerText = 'Mengirim...';
 
             try {
-                const { error } = await supabase
-                    .from('wishes')
-                    .insert([{ name, message }]);
+                const response = await fetch(REST_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ name, message })
+                });
 
-                if (error) {
-                    alert(`Gagal mengirim ucapan: ${error.message}`);
-                    console.error(error);
-                } else {
-                    form.reset();
-                    await fetchWishes(); // Langsung tampilin ucapan baru di bawah otomatis
-                }
+                if (!response.ok) throw new Error('Gagal menyimpan ke database');
+
+                form.reset();
+                await fetchWishes();
             } catch (err) {
-                alert(`Error Sistem: ${err.message}`);
+                alert('Gagal mengirim ucapan, coba lagi nanti.');
+                console.error(err);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'Kirim Ucapan';
@@ -118,11 +98,10 @@
 
         function escapeHTML(str) {
             if (!str) return '';
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
+        // Jalankan fungsi load pertama kali
         fetchWishes();
     </script>
 </body>
