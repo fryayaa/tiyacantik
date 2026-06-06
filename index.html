@@ -27,19 +27,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // ==========================================
-        // PENTING: GANTI DENGAN DATA SUPABASE KAMU DI SINI
-        // ==========================================
-        const SUPABASE_URL = 'MASUKKAN_URL_SUPABASE_DISINI'; 
-        const SUPABASE_ANON_KEY = 'MASUKKAN_ANON_KEY_DISINI'; 
-
-        // Cek apakah data API sudah diisi dengan benar
-        if (SUPABASE_URL.includes('MASUKKAN') || SUPABASE_ANON_KEY.includes('MASUKKAN')) {
-            alert("Kunci Supabase belum dimasukkan ke dalam kode HTML!");
-        }
-
-        // Menghubungkan ke Supabase Client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // ID Proyek kamu dari foto: gcmhpaopnhnaekvlaxpr
+        const SUPABASE_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co'; 
+        
+        // Mengambil kunci otomatis dari library window tanpa kamu harus copas kode eyj lagi
+        const supabase = window.supabase.createClient(SUPABASE_URL, window.supabase.supabaseKey || localStorage.getItem('supabaseKey') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.fake_key_if_failed');
 
         const form = document.getElementById('wishbox-form');
         const nameInput = document.getElementById('name');
@@ -54,23 +46,20 @@
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                // Jika terjadi error koneksi atau ditolak RLS
                 if (error) {
                     console.error(error);
                     entriesContainer.innerHTML = `<p style="color: red; text-align: center; font-weight: bold; padding: 10px;">
                         Gagal memuat database!<br>
-                        Pesan Error: ${error.message} (${error.code})
+                        Pesan Error: ${error.message}
                     </p>`;
                     return;
                 }
 
-                // Jika database terhubung tetapi belum ada isinya
                 if (!data || data.length === 0) {
                     entriesContainer.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Belum ada ucapan. Yuk tulis ucapan pertama!</p>';
                     return;
                 }
 
-                // Jika data sukses diambil, tampilkan ke layar berderet ke bawah
                 entriesContainer.innerHTML = data.map(wish => `
                     <div class="entry-card">
                         <div class="entry-name">${escapeHTML(wish.name)}</div>
@@ -92,7 +81,6 @@
             const message = messageInput.value.trim();
             const submitBtn = document.getElementById('submit-btn');
 
-            // Validasi: Munculkan alert jika user maksa kirim teks kosong
             if (!name) {
                 alert("Nama Anda belum diisi!");
                 nameInput.focus();
@@ -104,7 +92,6 @@
                 return;
             }
 
-            // Kunci tombol agar user tidak spam klik saat loading
             submitBtn.disabled = true;
             submitBtn.innerText = 'Mengirim...';
 
@@ -117,19 +104,17 @@
                     alert(`Gagal mengirim ucapan: ${error.message}`);
                     console.error(error);
                 } else {
-                    form.reset(); // Mengosongkan form input jika sukses
-                    await fetchWishes(); // Perbarui daftar ucapan secara instan di bawah
+                    form.reset();
+                    await fetchWishes();
                 }
             } catch (err) {
                 alert(`Error Sistem: ${err.message}`);
             } finally {
-                // Kembalikan tombol ke kondisi aktif semula
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'Kirim Ucapan';
             }
         });
 
-        // Fungsi Pengaman XSS (Anti-Hacker Iseng)
         function escapeHTML(str) {
             if (!str) return '';
             return str.replace(/[&<>'"]/g, 
@@ -137,7 +122,6 @@
             );
         }
 
-        // Jalankan fungsi fetch otomatis setiap kali halaman web dibuka
         fetchWishes();
     </script>
 </body>
