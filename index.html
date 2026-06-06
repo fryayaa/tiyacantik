@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buku Tamu Digital</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Tambahan style bawaan biar tampilan rapi otomatis */
+        .entry-card {
+            background: white; 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: left;
+        }
+        .entry-name {
+            font-weight: bold; 
+            color: #333; 
+            margin-bottom: 5px;
+        }
+        .entry-message {
+            color: #666; 
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -27,13 +47,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // DATA KONEKSI RESMI PROYEK LU
+        // Data akses proyek Supabase lu yang valid
         const SUPABASE_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co';
-        
-        // Kunci Anon Key yang valid dan pas untuk project ID lu
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.3R3uB-Cg9-yofcK2v_v-tB1o1k3B2_rYgE6O6R3uB-C';
 
-        // Inisialisasi klien Supabase (Hanya 1 tunggal, tidak ganda)
+        // Inisialisasi Klien Resmi Supabase (Hanya 1 tunggal, tidak ganda)
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('wishbox-form');
@@ -41,7 +59,7 @@
         const messageInput = document.getElementById('message');
         const entriesContainer = document.getElementById('wishbox-entries');
 
-        // Fungsi menampilkan data ucapan
+        // Fungsi menampilkan daftar ucapan dari tabel database
         async function fetchWishes() {
             try {
                 const { data, error } = await supabase
@@ -50,7 +68,7 @@
                     .order('created_at', { ascending: false });
 
                 if (error) {
-                    console.error(error);
+                    console.error('Error dari Supabase:', error);
                     entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Gagal memuat ucapan dari database.</p>`;
                     return;
                 }
@@ -61,19 +79,19 @@
                 }
 
                 entriesContainer.innerHTML = data.map(wish => `
-                    <div class="entry-card" style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <div class="entry-name" style="font-weight: bold; color: #333; margin-bottom: 5px;">${escapeHTML(wish.name)}</div>
-                        <div class="entry-message" style="color: #666; font-size: 14px;">${escapeHTML(wish.message)}</div>
+                    <div class="entry-card">
+                        <div class="entry-name">${escapeHTML(wish.name)}</div>
+                        <div class="entry-message">${escapeHTML(wish.message)}</div>
                     </div>
                 `).join('');
 
             } catch (err) {
-                console.error(err);
+                console.error('Error sistem:', err);
                 entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Error koneksi sistem.</p>`;
             }
         }
 
-        // Fungsi menyimpan ucapan baru
+        // Fungsi menyimpan ucapan baru saat tombol diklik
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = nameInput.value.trim();
@@ -93,10 +111,10 @@
                     console.error(error);
                 } else {
                     form.reset();
-                    await fetchWishes(); // Perbarui daftar di bawah secara otomatis
+                    await fetchWishes(); // Refresh otomatis daftarnya di bawah
                 }
             } catch (err) {
-                alert('Terjadi kesalahan koneksi.');
+                alert('Terjadi kesalahan koneksi saat mengirim.');
                 console.error(err);
             } finally {
                 submitBtn.disabled = false;
@@ -104,12 +122,13 @@
             }
         });
 
+        // Amankan teks dari karakter aneh HTML
         function escapeHTML(str) {
             if (!str) return '';
             return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
-        // Jalankan perintah load saat web dibuka
+        // Jalankan pengambilan data pertama kali saat web dibuka
         fetchWishes();
     </script>
 </body>
