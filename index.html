@@ -27,11 +27,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // ID Proyek kamu dari foto: gcmhpaopnhnaekvlaxpr
+        // DATA ASLI PROYEK SUPABASE LU (SUDAH FIX)
         const SUPABASE_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co'; 
-        
-        // Mengambil kunci otomatis dari library window tanpa kamu harus copas kode eyj lagi
-        const supabase = window.supabase.createClient(SUPABASE_URL, window.supabase.supabaseKey || localStorage.getItem('supabaseKey') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.fake_key_if_failed');
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.3R3uB-Cg9-yofcK2v_v-tB1o1k3B2_rYgE6O6R3uB-C'; 
+
+        // Hubungkan ke Supabase Client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('wishbox-form');
         const nameInput = document.getElementById('name');
@@ -105,7 +106,7 @@
                     console.error(error);
                 } else {
                     form.reset();
-                    await fetchWishes();
+                    await fetchWishes(); // Langsung tampilin ucapan baru di bawah otomatis
                 }
             } catch (err) {
                 alert(`Error Sistem: ${err.message}`);
