@@ -27,10 +27,18 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // ISI DENGAN URL DAN ANON KEY KAMU YANG SEBENARNYA
-        const SUPABASE_URL = 'https://XYZ_PROJECT_ID.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; 
+        // ==========================================
+        // PENTING: GANTI DENGAN DATA SUPABASE KAMU DI SINI
+        // ==========================================
+        const SUPABASE_URL = 'MASUKKAN_URL_SUPABASE_DISINI'; 
+        const SUPABASE_ANON_KEY = 'MASUKKAN_ANON_KEY_DISINI'; 
 
+        // Cek apakah data API sudah diisi dengan benar
+        if (SUPABASE_URL.includes('MASUKKAN') || SUPABASE_ANON_KEY.includes('MASUKKAN')) {
+            alert("Kunci Supabase belum dimasukkan ke dalam kode HTML!");
+        }
+
+        // Menghubungkan ke Supabase Client
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('wishbox-form');
@@ -38,6 +46,7 @@
         const messageInput = document.getElementById('message');
         const entriesContainer = document.getElementById('wishbox-entries');
 
+        // Fungsi Mengambil Ucapan (Fetch)
         async function fetchWishes() {
             try {
                 const { data, error } = await supabase
@@ -45,20 +54,23 @@
                     .select('*')
                     .order('created_at', { ascending: false });
 
+                // Jika terjadi error koneksi atau ditolak RLS
                 if (error) {
                     console.error(error);
-                    entriesContainer.innerHTML = `<p style="color: red; text-align: center; font-weight: bold;">
+                    entriesContainer.innerHTML = `<p style="color: red; text-align: center; font-weight: bold; padding: 10px;">
                         Gagal memuat database!<br>
-                        Error: ${error.message}
+                        Pesan Error: ${error.message} (${error.code})
                     </p>`;
                     return;
                 }
 
+                // Jika database terhubung tetapi belum ada isinya
                 if (!data || data.length === 0) {
                     entriesContainer.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Belum ada ucapan. Yuk tulis ucapan pertama!</p>';
                     return;
                 }
 
+                // Jika data sukses diambil, tampilkan ke layar berderet ke bawah
                 entriesContainer.innerHTML = data.map(wish => `
                     <div class="entry-card">
                         <div class="entry-name">${escapeHTML(wish.name)}</div>
@@ -68,18 +80,31 @@
 
             } catch (err) {
                 console.error(err);
-                entriesContainer.innerHTML = `<p style="color: red; text-align: center;">Error Sistem: ${err.message}</p>`;
+                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Error Sistem: ${err.message}</p>`;
             }
         }
 
+        // Fungsi Mengirim Ucapan (Submit Form)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
             const name = nameInput.value.trim();
             const message = messageInput.value.trim();
             const submitBtn = document.getElementById('submit-btn');
 
-            if (!name || !message) return;
+            // Validasi: Munculkan alert jika user maksa kirim teks kosong
+            if (!name) {
+                alert("Nama Anda belum diisi!");
+                nameInput.focus();
+                return;
+            }
+            if (!message) {
+                alert("Harapan atau ucapan Anda belum diisi!");
+                messageInput.focus();
+                return;
+            }
 
+            // Kunci tombol agar user tidak spam klik saat loading
             submitBtn.disabled = true;
             submitBtn.innerText = 'Mengirim...';
 
@@ -89,19 +114,22 @@
                     .insert([{ name, message }]);
 
                 if (error) {
-                    alert(`Gagal mengirim: ${error.message}`);
+                    alert(`Gagal mengirim ucapan: ${error.message}`);
+                    console.error(error);
                 } else {
-                    form.reset();
-                    await fetchWishes();
+                    form.reset(); // Mengosongkan form input jika sukses
+                    await fetchWishes(); // Perbarui daftar ucapan secara instan di bawah
                 }
             } catch (err) {
                 alert(`Error Sistem: ${err.message}`);
             } finally {
+                // Kembalikan tombol ke kondisi aktif semula
                 submitBtn.disabled = false;
                 submitBtn.innerText = 'Kirim Ucapan';
             }
         });
 
+        // Fungsi Pengaman XSS (Anti-Hacker Iseng)
         function escapeHTML(str) {
             if (!str) return '';
             return str.replace(/[&<>'"]/g, 
@@ -109,6 +137,7 @@
             );
         }
 
+        // Jalankan fungsi fetch otomatis setiap kali halaman web dibuka
         fetchWishes();
     </script>
 </body>
