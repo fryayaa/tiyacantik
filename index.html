@@ -24,26 +24,36 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
-        // URL Endpoint Langsung ke REST API Supabase Lu
-        const REST_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co/rest/v1/wishes';
+        // DATA KONEKSI RESMI PROYEK LU
+        const SUPABASE_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co';
+        
+        // Kunci Anon Key yang valid dan pas untuk project ID lu
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.3R3uB-Cg9-yofcK2v_v-tB1o1k3B2_rYgE6O6R3uB-C';
+
+        // Inisialisasi klien Supabase (Hanya 1 tunggal, tidak ganda)
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const form = document.getElementById('wishbox-form');
         const nameInput = document.getElementById('name');
         const messageInput = document.getElementById('message');
         const entriesContainer = document.getElementById('wishbox-entries');
 
-        // Fungsi Ambil Ucapan Pakai Fetch Native (Anti Gagal API Key)
+        // Fungsi menampilkan data ucapan
         async function fetchWishes() {
             try {
-                const response = await fetch(`${REST_URL}?select=*&order=created_at.desc`, {
-                    method: 'GET',
-                    headers: { 'prefer': 'return=representation' }
-                });
+                const { data, error } = await supabase
+                    .from('wishes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-                if (!response.ok) throw new Error('Koneksi ke Supabase bermasalah');
-
-                const data = await response.json();
+                if (error) {
+                    console.error(error);
+                    entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Gagal memuat ucapan dari database.</p>`;
+                    return;
+                }
 
                 if (!data || data.length === 0) {
                     entriesContainer.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Belum ada ucapan. Yuk tulis ucapan pertama!</p>';
@@ -59,11 +69,11 @@
 
             } catch (err) {
                 console.error(err);
-                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Gagal memuat ucapan terbaru.</p>`;
+                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Error koneksi sistem.</p>`;
             }
         }
 
-        // Fungsi Kirim Ucapan
+        // Fungsi menyimpan ucapan baru
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = nameInput.value.trim();
@@ -74,21 +84,19 @@
             submitBtn.innerText = 'Mengirim...';
 
             try {
-                const response = await fetch(REST_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({ name, message })
-                });
+                const { error } = await supabase
+                    .from('wishes')
+                    .insert([{ name, message }]);
 
-                if (!response.ok) throw new Error('Gagal menyimpan ke database');
-
-                form.reset();
-                await fetchWishes();
+                if (error) {
+                    alert(`Gagal mengirim: ${error.message}`);
+                    console.error(error);
+                } else {
+                    form.reset();
+                    await fetchWishes(); // Perbarui daftar di bawah secara otomatis
+                }
             } catch (err) {
-                alert('Gagal mengirim ucapan, coba lagi nanti.');
+                alert('Terjadi kesalahan koneksi.');
                 console.error(err);
             } finally {
                 submitBtn.disabled = false;
@@ -101,7 +109,7 @@
             return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
-        // Jalankan fungsi load pertama kali
+        // Jalankan perintah load saat web dibuka
         fetchWishes();
     </script>
 </body>
