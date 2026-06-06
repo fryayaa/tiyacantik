@@ -6,6 +6,7 @@
     <title>Buku Tamu Digital</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* CSS Tambahan biar tampilan card ucapan rapi otomatis */
         .entry-card {
             background: white; 
             padding: 15px; 
@@ -43,33 +44,32 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <script>
-        const SUPABASE_URL = 'https://gcmhpaopnhnaekvlaxpr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.3R3uB-Cg9-yofcK2v_v-tB1o1k3B2_rYgE6O6R3uB-C';
-
-        // Hubungkan ke Supabase Client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const PROJECT_ID = 'gcmhpaopnhnaekvlaxpr';
+        const REST_URL = `https://${PROJECT_ID}.supabase.co/rest/v1/wishes`;
+        
+        // Kunci Anon Key resmi proyek lu
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbWhwYW9wbmhuYWVrdmxheHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTc2NTcyMDAsImV4cCI6MjAzMzIzMzIwMH0.3R3uB-Cg9-yofcK2v_v-tB1o1k3B2_rYgE6O6R3uB-C';
 
         const form = document.getElementById('wishbox-form');
         const nameInput = document.getElementById('name');
         const messageInput = document.getElementById('message');
         const entriesContainer = document.getElementById('wishbox-entries');
 
-        // Fungsi Ambil Data Ucapan
+        // Fungsi Menampilkan Ucapan
         async function fetchWishes() {
             try {
-                const { data, error } = await supabase
-                    .from('wishes')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const response = await fetch(`${REST_URL}?select=*&order=created_at.desc`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    }
+                });
 
-                if (error) {
-                    console.error('Error Supabase:', error);
-                    entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Gagal memuat ucapan dari database.</p>`;
-                    return;
-                }
+                if (!response.ok) throw new Error('Gagal mengambil data');
+
+                const data = await response.json();
 
                 if (!data || data.length === 0) {
                     entriesContainer.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Belum ada ucapan. Yuk tulis ucapan pertama!</p>';
@@ -84,12 +84,12 @@
                 `).join('');
 
             } catch (err) {
-                console.error('Error Sistem:', err);
-                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Error koneksi sistem.</p>`;
+                console.error(err);
+                entriesContainer.innerHTML = `<p style="color: red; text-align: center; padding: 10px;">Gagal memuat ucapan dari database.</p>`;
             }
         }
 
-        // Fungsi Kirim Data (Fix Anti-Blank)
+        // Fungsi Kirim Ucapan
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = nameInput.value.trim();
@@ -100,20 +100,23 @@
             submitBtn.innerText = 'Mengirim...';
 
             try {
-                const { error } = await supabase
-                    .from('wishes')
-                    .insert([{ name, message }]);
+                const response = await fetch(REST_URL, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ name, message })
+                });
 
-                if (error) {
-                    alert(`Gagal mengirim: ${error.message}`);
-                    console.error(error);
-                } else {
-                    form.reset();
-                    // Panggil fungsi fetch ulang secara aman tanpa merusak HTML
-                    await fetchWishes();
-                }
+                if (!response.ok) throw new Error('Gagal menyimpan ucapan');
+
+                form.reset();
+                await fetchWishes();
             } catch (err) {
-                alert('Terjadi kesalahan koneksi.');
+                alert('Gagal mengirim ucapan, coba lagi nanti.');
                 console.error(err);
             } finally {
                 submitBtn.disabled = false;
@@ -126,7 +129,7 @@
             return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
-        // Jalankan saat web pertama kali dibuka
+        // Jalankan pas pertama kali web dibuka
         fetchWishes();
     </script>
 </body>
